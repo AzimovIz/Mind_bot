@@ -7,6 +7,16 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 import os
 from dotenv import load_dotenv
 
+if os.path.isfile(".env"):
+    load_dotenv()
+    TOKEN = os.getenv("TOKEN")
+else:
+    with open(".env", "w") as file:
+        file.write("TOKEN = 'bot_token_here'\nOPENAI_TOKEN = 'openai_token'")
+    print("insert bot token in .env file")
+    exit(0)
+
+
 import data_base.utils as db
 import utils
 from main import chat_gpt_query
@@ -19,10 +29,6 @@ class States(StatesGroup):
     add_note = State()
     search = State()
     del_note = State()
-
-
-load_dotenv()
-TOKEN = os.getenv("TOKEN")
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())

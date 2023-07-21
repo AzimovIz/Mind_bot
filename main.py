@@ -1,9 +1,19 @@
 import openai
 import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_TOKEN")
+
+# Если используете прокси для доступа к openai -
+# раскоментируйте следующую строку и отредактируйте в соответствии своими данными
+# openai.api_base = f"http://127.0.0.1:5000"
+
+
 import utils
 import data_base.utils as db_utils
-openai.api_key = ""
-openai.api_base = f"http://127.0.0.1:5000"
+
 
 def list_files(startpath):
     rez = ''
