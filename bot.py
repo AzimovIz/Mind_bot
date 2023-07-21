@@ -19,7 +19,7 @@ else:
 
 import data_base.utils as db
 import utils
-from main import chat_gpt_query
+from gpt_util import chat_gpt_query
 
 nl = "\n"
 
