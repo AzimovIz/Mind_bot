@@ -4,6 +4,7 @@ from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import StatesGroup, State
+import json
 import os
 from dotenv import load_dotenv
 
@@ -16,10 +17,13 @@ else:
     print("insert bot token in .env file")
     exit(0)
 
-
 import data_base.utils as db
-import utils
 from gpt_util import chat_gpt_query
+
+prompts = {}
+
+with open("prompts.json", "r", encoding="utf-8") as file:
+    prompts = json.load(file)
 
 nl = "\n"
 
@@ -29,6 +33,7 @@ class States(StatesGroup):
     add_note = State()
     search = State()
     del_note = State()
+
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -132,7 +137,7 @@ async def callback_inline(callback_query, state: FSMContext):
         marker_path = "/" + "/".join(db.get_path(callback_query.from_user.id, head_marker))
         text = f"Cписок знаний в {marker_path}:\n"
         for i in range(len(notes)):
-            text += nl+f"{i}: {notes[i]['value']}"
+            text += nl + f"{i}: {notes[i]['value']}"
 
         text += "\nКакое знание удалить? Напиши номер\nОтмена - /start"
         await bot.edit_message_text(text,
@@ -140,7 +145,6 @@ async def callback_inline(callback_query, state: FSMContext):
                                     callback_query.message.message_id)
 
         await state.update_data(in_marker=head_marker)
-
 
     await bot.answer_callback_query(callback_query.id)
 
@@ -207,9 +211,9 @@ async def state_case_met(message: types.Message, state: FSMContext):
     await bot.send_message(message.from_user.id, "Ищу...")
     try:
         tree = db.get_tree(message.from_user.id)
-        location = chat_gpt_query(utils.prompts["ask_file_location"].format(message.text, tree))
+        location = chat_gpt_query(prompts["ask_file_location"].format(message.text, tree))
         data = db.get_notes_from_location(message.from_user.id, location)
-        answer = chat_gpt_query(utils.prompts["read_file"].format(message.text, data))
+        answer = chat_gpt_query(prompts["read_file"].format(message.text, data))
         await bot.send_message(message.from_user.id, str(answer))
 
     except Exception as err:
@@ -217,6 +221,7 @@ async def state_case_met(message: types.Message, state: FSMContext):
         await bot.send_message(message.from_user.id, "Что-то пошло не так, попробуте еще раз) - /search")
 
     await state.finish()
+
 
 @dp.message_handler(state=States.del_note)
 async def state_case_met(message: types.Message, state: FSMContext):
@@ -238,11 +243,6 @@ async def state_case_met(message: types.Message, state: FSMContext):
                                    "Не получилось далить знание!",
                                    reply_markup=kb)
     await state.finish()
-
-
-@dp.message_handler(state='*')
-async def my_room(message, state: FSMContext):
-    pass
 
 
 if __name__ == '__main__':

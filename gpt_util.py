@@ -1,6 +1,7 @@
-import openai
 import os
+import json
 
+import openai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,35 +11,21 @@ openai.api_key = os.getenv("OPENAI_TOKEN")
 # раскоментируйте следующую строку и отредактируйте в соответствии своими данными
 # openai.api_base = f"http://127.0.0.1:5000"
 
-
-import utils
 import data_base.utils as db_utils
 
+prompts = {}
 
-def list_files(startpath):
-    rez = ''
-    for root, dirs, files in os.walk(startpath):
-        level = root.replace(startpath, '').count(os.sep)
-        indent = ' ' * 4 * (level)
-        rez += '{}{}/'.format(indent, os.path.basename(root))
-        subindent = ' ' * 4 * (level + 1)
-        for f in files:
-            rez += '{}{}'.format(subindent, f)
-
-    return rez
+with open("prompts.json", "r", encoding="utf-8") as file:
+    prompts = json.load(file)
 
 
-def read_file(file_location):
-    with open(file_location, "r", encoding="utf-8") as file:
-        data = file.read()
-
-    return data
-
-
-def gpt_answer(message_log):
+def ask_gpt(context):
+    """
+    Выполняет запрос по апи к ChatGPT
+    """
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=message_log,
+        messages=context,
         max_tokens=256,
         temperature=0.6,
         top_p=1,
@@ -56,21 +43,9 @@ def chat_gpt_query(input_str):
     """ Выполняет запрос заданного текста к CHATGPT """
 
     dialog_data = [
-        {"role": "system", "content": utils.prompts["start_prompt"]},
+        {"role": "system", "content": prompts["start_prompt"]},
         {"role": "user", "content": input_str}
     ]
-    raw_response = gpt_answer(dialog_data)
+    raw_response = ask_gpt(dialog_data)
 
     return raw_response
-
-
-if __name__ == '__main__':
-    ask = "где анины кисточки?"
-    print(ask)
-    files = db_utils.get_tree("12")
-    file_location = chat_gpt_query(utils.prompts["ask_file_location"].format(ask, files))
-    print(file_location)
-    data = db_utils.get_notes_from_location("12", file_location)
-    data = chat_gpt_query(utils.prompts["read_file"].format(ask, file_location, data))
-    print(data)
-    list_files("data")
