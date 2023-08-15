@@ -11,10 +11,7 @@ openai.api_key = os.getenv("OPENAI_TOKEN")
 # раскоментируйте следующую строку и отредактируйте в соответствии своими данными
 # openai.api_base = f"http://127.0.0.1:5000"
 
-import data_base.utils as db_utils
-
 prompts = {}
-
 with open("prompts.json", "r", encoding="utf-8") as file:
     prompts = json.load(file)
 
